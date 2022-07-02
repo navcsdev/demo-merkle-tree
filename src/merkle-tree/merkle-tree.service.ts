@@ -13,10 +13,18 @@ export class MerkleTreeService {
   private rootHash: string;
 
   constructor() {
-    const leaves = ['0x2C0d15441d05D6d9937538aAEeb48c96700b1F0f', '0xfbf7ea75cf2f11d484513ae26dd7895de0778a8a', '0xe6e332697ef99faf915d76c9e7af240dddcc247f'].map(x => keccak256(x))
+    this.logger.log({ leaf: '0x2c0d15441d05d6d9937538aaeeb48c96700b1f0f' + Buffer.from(',', 'utf8').toString('hex') + Buffer.from('60', 'utf8').toString('hex')});
+    // this.logger.log({ leaf: Buffer.from('0x2c0d15441d05d6d9937538aaeeb48c96700b1f0f', 'hex') + Buffer.from(',', 'hex') + Buffer.from('60', 'hex')});
+
+    const leaves = [
+      { address: '0x2c0d15441d05d6d9937538aaeeb48c96700b1f0f', amount: '60' },
+      { address: '0xfbf7ea75cf2f11d484513ae26dd7895de0778a8a', amount: '100' },
+      { address: '0xe6e332697ef99faf915d76c9e7af240dddcc247f', amount: '111' }
+    ].map(item => keccak256(item.address + Buffer.from(',', 'utf8').toString('hex') + Buffer.from(item.amount, 'utf8').toString('hex')));
+
     this.merkleTree = new MerkleTree(leaves, keccak256, { sortPairs: true })
     this.rootHash = this.merkleTree.getHexRoot();
-    this.logger.log({root: this.rootHash})
+    this.logger.log({root: this.rootHash, tree: this.merkleTree.toString()})
   }
 
   create(createMerkleTreeDto: CreateMerkleTreeDto) {
@@ -32,15 +40,15 @@ export class MerkleTreeService {
   }
 
   verify(createMerkleTreeDto: CreateMerkleTreeDto) {
-    const address = keccak256(createMerkleTreeDto.address);
-    this.logger.log(address.toString('hex'));
-    this.logger.log({proof: this.merkleTree.getHexProof(address)});
-    return this.merkleTree.verify(createMerkleTreeDto.proof, address, this.rootHash);
+    const hash = keccak256(createMerkleTreeDto.address + Buffer.from(',', 'utf8').toString('hex') + Buffer.from(createMerkleTreeDto.amount, 'utf8').toString('hex'))
+    this.logger.log({hash: hash.toString('hex')}, 'verify');
+    return this.merkleTree.verify(createMerkleTreeDto.proof, hash, this.rootHash);
   }
 
   getProof(createMerkleTreeDto: CreateMerkleTreeDto) {
-    const address = keccak256(createMerkleTreeDto.address);
-    const proof = this.merkleTree.getHexProof(address);
+    const hash = keccak256(createMerkleTreeDto.address + Buffer.from(',', 'utf8').toString('hex') + Buffer.from(createMerkleTreeDto.amount, 'utf8').toString('hex'))
+    this.logger.log({hash: hash.toString('hex')}, 'getProof');
+    const proof = this.merkleTree.getHexProof(hash);
     return proof;
   }
 
